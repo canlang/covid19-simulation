@@ -2,18 +2,18 @@ clearvars;clc;
 % Set parameters
 num_par = 100;            % number of particles
 
-xl = [0 100];           % x axis limit
-yl = [0 100];           % y axis limit
+xl = [0 100];           
+yl = [0 100];           
 start = [randi(xl,num_par,1),randi(yl,num_par,1)];  % starting coordinate (x,y)
-gain = 0.01;            % amount of motion at each iteration (% of axis range)
-time = 10;              % run time (seconds)
+gain = 0.01;              % movement 
+time = 10;        
 day = 0;
 limit_day = 100;
 
 % epi parameter
-r_infect = 5;
-infectP = 0.3;
-i_period = 300;
+r_infect = 10;
+infectP = 0.8;
+i_period = 13;
 
 %%
 close all;
@@ -46,7 +46,7 @@ sdf(gcf,'paper_f150')
 video_flag = 1;
 switch video_flag
     case 1
-        video_filename = 'n100-idot3';
+        video_filename = sprintf('n100-idot8-period%d',i_period);
         v = VideoWriter(strcat('vids/',video_filename),'MPEG-4');
         v.FrameRate = 10;
         v.Quality = 100;
@@ -78,14 +78,15 @@ while toc(t1) < time && ~all(pt(:,3))
    pt(:,2) = ybound(indy);
    % Apply infection transition
 %    pt(:,3) = updateInfection(pt);
-   infectedIdx = find(pt(:,3)>=1&pt(:,3)<=i_period);
-   noninfectedIdx = find(pt(:,3)==0);
-   sus_loc = pt(noninfectedIdx,1:2);
-   inf_loc = pt(infectedIdx,1:2);
+   infectiousIdx = find(pt(:,3)>=1&pt(:,3)<=i_period);
+   susceptibleIdx = find(pt(:,3)==0);
+   sus_loc = pt(susceptibleIdx,1:2);
+   inf_loc = pt(infectiousIdx,1:2);
    [i_idx,i_dist] = knnsearch(inf_loc,sus_loc,'K',1);
-   if sum((i_dist<5) > 0)           % get index neighbor in distance 20 m
-       rndSel = rand(sum(i_dist<5),1)<infectP;
-       infectionIdx = noninfectedIdx(rndSel); 
+   if any(i_dist<r_infect)           % get index neighbor in distance r m
+       rndSel = rand(sum(i_dist<r_infect),1)<infectP;
+       contactIdx = find(i_dist<r_infect);
+       infectionIdx = susceptibleIdx(contactIdx(rndSel)); 
        if ~isempty(infectionIdx)           
            pt(infectionIdx,3) = 1;
            h.CData(infectionIdx,:) = repmat([1 0 0],length(infectionIdx),1);           
@@ -98,9 +99,8 @@ while toc(t1) < time && ~all(pt(:,3))
    
    if sum(pt(:,3)>0)
        pt(pt(:,3)>0,3) = pt(pt(:,3)>0,3)+1;
-       h.CData(pt(:,3)>i_period,:) = ones(sum(pt(:,3)>i_period),1)*[0.4940 0.1840 0.5560];
-   end
-   
+       h.CData(pt(:,3)>i_period,:) = ones(sum(pt(:,3)>i_period),1)*[0 0 1];
+   end   
       
    % Update position of dot on axis
    h.XData = pt(:,1); 

@@ -1,43 +1,65 @@
-clc;clearvars;close all;
+clearvars;clc;
 % Set parameters
-num_par = 50;            % number of particles
+num_par = 100;            % number of particles
 
 xl = [0 100];           % x axis limit
 yl = [0 100];           % y axis limit
 start = [randi(xl,num_par,1),randi(yl,num_par,1)];  % starting coordinate (x,y)
 gain = 0.01;            % amount of motion at each iteration (% of axis range)
-time = 30;              % run time (seconds)
+time = 10;              % run time (seconds)
 day = 0;
 limit_day = 100;
-showTrace = true;      % when true, the path is recorded
+
 % epi parameter
-infectP = 0.3;
+r_infect = 10;
+infectP = 0.8;
+i_period = 13;
+
 %%
+close all;
 % initialize figure
-
-% figure
-% subplot(2,1,1)
-ah = axes; 
+f1 = figure;
+set(gcf,'units','points','position',[500,500,600,400])
 % h = plot(start(:,1), start(:,2), 'go', 'MarkerSize', 8, 'MarkerFaceColor', 'g'); 
-h = scatter(start(:,1), start(:,2),50,repmat([0 1 0],num_par,1),'filled');
+% subplot(2,1,1)
+ax = gca;
+h = scatter(start(:,1), start(:,2),25,repmat([0 1 0],num_par,1),'filled');
+% h = scatter(start(:,1), start(:,2),25,zeros(num_par,1),'filled');
 
-% xlim(xl);
-% xlim(yl);
-xlim(ah, xl)
-ylim(ah, yl)
-% axis equal
-hold(ah, 'on')
+% axis image
+xlim(ax, xl)
+ylim(ax, yl)
+hold(ax, 'on')
 % grid on
-% hold on
 %%
 % randomly jitter for set amount of time
 t1 = tic; 
 pt = [start,zeros(num_par,1)];
+% first infection
 pt(1:2,3) = 1;
-h.CData(1:2,:) = repmat([1 0 0],2,1);
+h.CData(1:2,:) = ones(2,1)*[1 0 0];
 
 stepX = range(xl) * gain; 
 stepY = range(yl) * gain; 
+sdf(gcf,'paper_f150')
+
+video_flag = 1;
+switch video_flag
+    case 1
+        video_filename = sprintf('n100-idot8-period%d',i_period);
+        v = VideoWriter(strcat('vids/',video_filename),'MPEG-4');
+        v.FrameRate = 10;
+        v.Quality = 100;
+        open(v);
+        frame = getframe(f1);
+        writeVideo(v,frame);
+end
+
+figure
+set(gcf,'units','points','position',[1100,500,600,400])
+h2 = animatedline;
+ax2 = gca;
+ylim(ax2, yl)
 
 %%
 while toc(t1) < time && ~all(pt(:,3))
@@ -56,27 +78,42 @@ while toc(t1) < time && ~all(pt(:,3))
    pt(:,2) = ybound(indy);
    % Apply infection transition
 %    pt(:,3) = updateInfection(pt);
-   infectedIdx = find(pt(:,3)==1);
-   noninfectedIdx = find(pt(:,3)==0);
-   sus_loc = pt(noninfectedIdx,1:2);
-   inf_loc = pt(infectedIdx,1:2);
+   infectiousIdx = find(pt(:,3)>=1&pt(:,3)<=i_period);
+   susceptibleIdx = find(pt(:,3)==0);
+   sus_loc = pt(susceptibleIdx,1:2);
+   inf_loc = pt(infectiousIdx,1:2);
    [i_idx,i_dist] = knnsearch(inf_loc,sus_loc,'K',1);
-   if sum((i_dist<5) > 0)           % get index neighbor in distance 20 m
-       if sum(rand(sum(i_dist<20),1)<infectP)>0
-           infectionIdx = noninfectedIdx(rand(sum(i_dist<5),1)<infectP);
+   if any(i_dist<r_infect)           % get index neighbor in distance r m
+       rndSel = rand(sum(i_dist<r_infect),1)<infectP;
+       contactIdx = find(i_dist<r_infect);
+       infectionIdx = susceptibleIdx(contactIdx(rndSel)); 
+       if ~isempty(infectionIdx)           
            pt(infectionIdx,3) = 1;
-           h.CData(infectionIdx,:) = repmat([1 0 0],length(infectionIdx),1);
+           h.CData(infectionIdx,:) = repmat([1 0 0],length(infectionIdx),1);           
        end
+       day_infect=sum(rndSel);
+       addpoints(h2,day,day_infect);
+   else
+       addpoints(h2,day,0);
    end
    
-   % plot segment
-   if showTrace
-       plot(ah,[h.XData(1), pt(1,1)], [h.YData(1), pt(1,2)], '-k')
+   if sum(pt(:,3)>0)
+       pt(pt(:,3)>0,3) = pt(pt(:,3)>0,3)+1;
+       h.CData(pt(:,3)>i_period,:) = ones(sum(pt(:,3)>i_period),1)*[0 0 1];
    end
+   
+      
    % Update position of dot on axis
    h.XData = pt(:,1); 
    h.YData = pt(:,2);
    
    drawnow
    day=day+1;
+   
+   switch video_flag
+        case 1
+        frame = getframe(f1);
+        writeVideo(v,frame);
+   end
 end
+switch video_flag, case 1, close(v);end
