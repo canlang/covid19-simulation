@@ -41,13 +41,19 @@ legend('Today','Current');
 %%
 % randomly jitter for set amount of time
 t1 = tic; 
-pt = [start,zeros(num_par,1)];
+pt = [start,zeros(num_par,2)];
 % first infection
 pt(1:2,3) = 1;
 h.CData(1:2,:) = ones(2,1)*[1 0 0];
+% percent of smartphone user;
+su = .2;
+suIdx = rand(num_par,1)<su;
+pt(:,4) = suIdx;
 
-stepX = range(xl) * gain; 
-stepY = range(yl) * gain; 
+
+% stepX = range(xl) * gain; 
+% stepY = range(yl) * gain; 
+step = range(xl) * gain;
 sdf(gcf,'paper_f150')
 
 video_flag = 0;
@@ -66,23 +72,20 @@ end
 while toc(t1) < time && any(pt(:,3)>=1&pt(:,3)<=i_period)            
    pt(pt(:,3)>0,3) = pt(pt(:,3)>0,3)+1;
    h.CData(pt(:,3)>i_period,:) = ones(sum(pt(:,3)>i_period),1)*[0 0 1];
-   
-   % Update movement
-   % determine range of possible next coordinates (binary dynamics)
-   xbound = [max(pt(:,1)-stepX, xl(1)), min(pt(:,1)+stepX, xl(2))]; 
-   ybound = [max(pt(:,2)-stepY, yl(1)), min(pt(:,2)+stepY, yl(2))];
-   % Randomly choose next coordinate
-   row = 1:num_par;
-   colx = randi([1,2],1,num_par);
-   coly = randi([1,2],1,num_par);
-   sz = size(xbound);
-   indx = sub2ind(sz,row,colx);
-   indy = sub2ind(sz,row,coly);
+      
+%    next_loc = getNextLocation(pt,xl,yl,step);
+   g1_idx = pt(:,3)>=1&pt(:,4)&pt(:,3)>=i_period/2;
+   g2_idx = ~g1_idx;
+   next_loc1 = getNextLocation(pt(g1_idx,1:2),[150 200],[150, 200],step);
+   next_loc2 = getNextLocation(pt(g2_idx,1:2),xl,yl,step);
+   next_loc = zeros(num_par,2);
+   next_loc(g1_idx,1:2) = next_loc1;
+   next_loc(g2_idx,1:2) = next_loc2;
    % Smooth animation
    dt = 5;
    fun1 = @(a,b) linspace(a,b,dt);
-   dx = arrayfun(fun1,pt(:,1),xbound(indx)','UniformOutput',false);
-   dy = arrayfun(fun1,pt(:,2),ybound(indy)','UniformOutput',false);
+   dx = arrayfun(fun1,pt(:,1),next_loc(:,1),'UniformOutput',false);
+   dy = arrayfun(fun1,pt(:,2),next_loc(:,2),'UniformOutput',false);
    dx = vertcat(dx{:});
    dy = vertcat(dy{:});
    for i=1:dt
@@ -90,11 +93,11 @@ while toc(t1) < time && any(pt(:,3)>=1&pt(:,3)<=i_period)
        h.YData = dy(:,i);       
        drawnow 
    end
-   
-   pt(:,1) = xbound(indx); 
-   pt(:,2) = ybound(indy);
-   h.XData = pt(:,1); 
-   h.YData = pt(:,2);    
+   pt(:,1:2) = next_loc;
+%    pt(:,1) = xbound(indx); 
+%    pt(:,2) = ybound(indy);
+%    h.XData = pt(:,1); 
+%    h.YData = pt(:,2);    
     
    % Apply infection transition`
 %    pt(:,3) = updateInfection(pt);
