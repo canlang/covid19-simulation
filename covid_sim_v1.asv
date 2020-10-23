@@ -6,7 +6,7 @@ xl = [0 100];
 yl = [0 100];           
 start = [randi(xl,num_par,1),randi(yl,num_par,1)];  % starting coordinate (x,y)
 gain = 0.01;              % movement 
-time = 30;        
+time = 10;        
 day = 0;
 limit_day = 100;
 
@@ -22,7 +22,7 @@ figure
 set(gcf,'units','points','position',[500,500,1200,400])
 ax1 = subplot(121);
 h = scatter(start(:,1), start(:,2),35,...
-    repmat([0 1 0],num_par,1),'filled','MarkerFaceAlpha',.5);
+    repmat([0 1 0],num_par,1),'filled','MarkerEdgeAlpha',.2);
 xlim(ax1, xl)
 ylim(ax1, yl)
 % hold(ax1, 'on')
@@ -31,11 +31,8 @@ ax2 = subplot(122);
 h2 = animatedline(0,0,'Color','m','LineWidth',1,'Marker','.');
 hold on
 h3 = animatedline(0,0,'Color','k','LineWidth',1);
-% ylim(ax2, [0 num_par])
-% xlim(ax2, [0 limit_day])
-xlabel('Time (day)');
-ylabel('# of infect');
-legend('Today','Current');
+ylim(ax2, [0 num_par])
+xlim(ax2, [0 limit_day])
 %%
 % randomly jitter for set amount of time
 t1 = tic; 
@@ -61,40 +58,8 @@ switch video_flag
         writeVideo(v,frame);
 end
 %%
-while toc(t1) < time && any(pt(:,3)>=1&pt(:,3)<=i_period)            
-   pt(pt(:,3)>0,3) = pt(pt(:,3)>0,3)+1;
-   h.CData(pt(:,3)>i_period,:) = ones(sum(pt(:,3)>i_period),1)*[0 0 1];
-   
-   % Update movement
-   % determine range of possible next coordinates (binary dynamics)
-   xbound = [max(pt(:,1)-stepX, xl(1)), min(pt(:,1)+stepX, xl(2))]; 
-   ybound = [max(pt(:,2)-stepY, yl(1)), min(pt(:,2)+stepY, yl(2))];
-   % Randomly choose next coordinate
-   row = 1:num_par;
-   colx = randi([1,2],1,num_par);
-   coly = randi([1,2],1,num_par);
-   sz = size(xbound);
-   indx = sub2ind(sz,row,colx);
-   indy = sub2ind(sz,row,coly);
-   % Smooth animation
-   dt = 5;
-   fun1 = @(a,b) linspace(a,b,dt);
-   dx = arrayfun(fun1,pt(:,1),xbound(indx)','UniformOutput',false);
-   dy = arrayfun(fun1,pt(:,2),ybound(indy)','UniformOutput',false);
-   dx = vertcat(dx{:});
-   dy = vertcat(dy{:});
-   for i=1:dt
-       h.XData = dx(:,i); 
-       h.YData = dy(:,i);       
-       drawnow 
-   end
-   
-   pt(:,1) = xbound(indx); 
-   pt(:,2) = ybound(indy);
-   h.XData = pt(:,1); 
-   h.YData = pt(:,2);    
-    
-   % Apply infection transition`
+while toc(t1) < time && any(pt(:,3)>=1&pt(:,3)<=i_period)   
+   % Apply infection transition
 %    pt(:,3) = updateInfection(pt);
    infectiousIdx = find(pt(:,3)>=1&pt(:,3)<=i_period);
    susceptibleIdx = find(pt(:,3)==0);
@@ -109,18 +74,49 @@ while toc(t1) < time && any(pt(:,3)>=1&pt(:,3)<=i_period)
            pt(infectionIdx,3) = 1;
            h.CData(infectionIdx,:) = repmat([1 0 0],length(infectionIdx),1);           
        end
-       day_infect=sum(rndSel);       
+       day_infect=sum(rndSel);
+       addpoints(h3,day,sum(pt(:,3)>=1&pt(:,3)<=i_period));       
        addpoints(h2,day,day_infect);
    else
        addpoints(h2,day,0);
        addpoints(h2,day,day_infect);
    end
-   addpoints(h3,day,sum(pt(:,3)>=1&pt(:,3)<=i_period));       
    
-   drawnow
-
-   day=day+1;
+   if sum(pt(:,3)>0)
+       pt(pt(:,3)>0,3) = pt(pt(:,3)>0,3)+1;
+       h.CData(pt(:,3)>i_period,:) = ones(sum(pt(:,3)>i_period),1)*[0 0 1];
+   end   
       
+   % Update movement
+   % determine range of possible next coordinates (binary dynamics)
+   xbound = [max(pt(:,1)-stepX, xl(1)), min(pt(:,1)+stepX, xl(2))]; 
+   ybound = [max(pt(:,2)-stepY, yl(1)), min(pt(:,2)+stepY, yl(2))];
+   % Randomly choose next coordinate
+   row = 1:num_par;
+   colx = randi([1,2],1,num_par);
+   coly = randi([1,2],1,num_par);
+   sz = size(xbound);
+   indx = sub2ind(sz,row,colx);
+   indy = sub2ind(sz,row,coly);
+   dt = 10;
+   fun1 = @(a,b) linspace(a,b,dt);
+   dx = arrayfun(fun1,pt(:,1),xbound(indx)','UniformOutput',false);
+   dy = arrayfun(fun1,pt(:,2),ybound(indy)','UniformOutput',false);
+   dx = vertcat(dx{:});
+   dy = vertcat(dy{:});
+   for i=1:dt
+       h.XData = dx(:,i); 
+       h.YData = dy(:,i);
+       drawnow 
+   end
+   pt(:,1) = xbound(indx); 
+   pt(:,2) = ybound(indy);
+%    h.XData = pt(:,1); 
+%    h.YData = pt(:,2);
+%    drawnow 
+   day=day+1;
+   
+   
    switch video_flag
         case 1
         frame = getframe(gcf);
