@@ -7,13 +7,13 @@ yl = [0 100];
 start = [randi(xl,num_par,1),randi(yl,num_par,1)];  % starting coordinate (x,y)
 gain = 0.01;              % movement 
 time = 30;        
-day = 0;
+day = 1;
 limit_day = 100;
 
 % Epi parameter
 r_infect = 5;
 infectP = 0.8;
-i_period = 4;
+i_period = 5;
 
 %% % Initialize figure
 close all;
@@ -27,8 +27,9 @@ xlim(ax1, xl)
 ylim(ax1, yl)
 % hold(ax1, 'on')
 
+
 ax2 = subplot(122);
-h2 = animatedline(0,0,'Color','m','LineWidth',1,'Marker','.');
+h2 = animatedline(0,0,'Color','m','LineWidth',1,'Marker','o');
 hold on
 h3 = animatedline(0,0,'Color','k','LineWidth',1);
 % ylim(ax2, [0 num_par])
@@ -36,6 +37,7 @@ h3 = animatedline(0,0,'Color','k','LineWidth',1);
 xlabel('Time (day)');
 ylabel('# of infect');
 legend('Today','Current');
+
 %%
 % randomly jitter for set amount of time
 t1 = tic; 
@@ -51,8 +53,8 @@ sdf(gcf,'paper_f150')
 video_flag = 0;
 switch video_flag
     case 1
-        fprintf('Saving vids...');
-        video_filename = sprintf('n100-idot8-period%d',i_period);
+        fprintf('Saving vids...\n');
+        video_filename = sprintf('pt%d-idot%.1f-period%d',num_par,infectP,i_period);
         v = VideoWriter(strcat('vids/',video_filename),'MPEG-4');
         v.FrameRate = 10;
         v.Quality = 100;
@@ -112,11 +114,10 @@ while toc(t1) < time && any(pt(:,3)>=1&pt(:,3)<=i_period)
        day_infect=sum(rndSel);       
        addpoints(h2,day,day_infect);
    else
-       addpoints(h2,day,0);
-       addpoints(h2,day,day_infect);
+       addpoints(h2,day,0);       
    end
    addpoints(h3,day,sum(pt(:,3)>=1&pt(:,3)<=i_period));       
-   
+   axis tight
    drawnow
 
    day=day+1;
