@@ -61,18 +61,6 @@ for l=1:su_n
         % stepY = range(yl) * gain; 
         step = range(xl) * gain;
 
-        video_flag = 0;
-        switch video_flag
-            case 1
-                fprintf('Saving vids...\n');
-                video_filename = sprintf('pt%d-idot%.1f-period%d',num_par,infectP,i_period);
-                v = VideoWriter(strcat('vids/',video_filename),'MPEG-4');
-                v.FrameRate = 10;
-                v.Quality = 100;
-                open(v);
-                frame = getframe(gcf);
-                writeVideo(v,frame);
-        end
         %%
         while toc(t1) < time && any(pt(:,3)>=1&pt(:,3)<=i_period)            
            pt(pt(:,3)>0,3) = pt(pt(:,3)>0,3)+1;
@@ -129,14 +117,5 @@ for l=1:su_n
 %            drawnow
 
            day=day+1;
-
-           switch video_flag
-                case 1
-                frame = getframe(gcf);
-                writeVideo(v,frame);
-           end
-        end
-        switch video_flag, case 1, close(v);end
-        extinct_date(l,k) = day;
     end
 end
