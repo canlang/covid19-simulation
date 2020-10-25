@@ -46,7 +46,7 @@ pt = [start,zeros(num_par,2)];
 pt(1:2,3) = 1;
 h.CData(1:2,:) = ones(2,1)*[1 0 0];
 % percent of smartphone user;
-su = .2;
+su = .5;
 suIdx = rand(num_par,1)<su;
 pt(:,4) = suIdx;
 
@@ -56,11 +56,11 @@ pt(:,4) = suIdx;
 step = range(xl) * gain;
 sdf(gcf,'paper_f150')
 
-video_flag = 0;
+video_flag = 1;
 switch video_flag
     case 1
         fprintf('Saving vids...\n');
-        video_filename = sprintf('pt%d-idot%.1f-period%d',num_par,infectP,i_period);
+        video_filename = sprintf('pt%d-su%.1f-idot%.1f-period%d',num_par,su,infectP,i_period);
         v = VideoWriter(strcat('vids/',video_filename),'MPEG-4');
         v.FrameRate = 10;
         v.Quality = 100;
