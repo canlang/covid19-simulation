@@ -1,6 +1,6 @@
 clearvars;close all;
-load('rep100_result.mat')
-su_list = 0:.1:1;
+load('rep1000_result.mat')
+% su_list = 0:.1:1;
 
 
 boxplot(extinct_date')
