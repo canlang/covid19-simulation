@@ -4,10 +4,10 @@ num_par = 500;            % number of particles
 
 su_list = 0:.1:1;
 su_n = size(su_list,2);
-rep = 100;
+rep = 1000;
 extinct_date = zeros(su_n,rep); 
 for l=1:su_n
-    for k=1:rep
+    parfor k=1:rep
         xl = [0 100];           
         yl = [0 100];           
         start = [randi(xl,num_par,1),randi(yl,num_par,1)];  % starting coordinate (x,y)
@@ -20,29 +20,6 @@ for l=1:su_n
         r_infect = 5;
         infectP = 0.8;
         i_period = 5;
-
-        %% % Initialize figure
-%         close all;
-% 
-%         figure
-%         set(gcf,'units','points','position',[500,500,1200,400])
-%         ax1 = subplot(121);
-%         h = scatter(start(:,1), start(:,2),35,...
-%             repmat([0 1 0],num_par,1),'filled','MarkerFaceAlpha',.5);
-%         xlim(ax1, xl)
-%         ylim(ax1, yl)
-%         % hold(ax1, 'on')
-% 
-% 
-%         ax2 = subplot(122);
-%         h2 = animatedline(0,0,'Color','m','LineWidth',1,'Marker','o');
-%         hold on
-%         h3 = animatedline(0,0,'Color','k','LineWidth',1);
-%         % ylim(ax2, [0 num_par])
-%         % xlim(ax2, [0 limit_day])
-%         xlabel('Time (day)');
-%         ylabel('# of infect');
-%         legend('Today','Current');
 
         %%
         % randomly jitter for set amount of time
@@ -117,6 +94,7 @@ for l=1:su_n
 %            drawnow
 
            day=day+1;
-        end
+        end        
+        extinct_date(l,k) = day;
     end
 end
