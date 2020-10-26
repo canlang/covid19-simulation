@@ -117,5 +117,6 @@ for l=1:su_n
 %            drawnow
 
            day=day+1;
+        end
     end
 end
