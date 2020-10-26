@@ -7,6 +7,7 @@ su_n = size(su_list,2);
 rep = 1000;
 extinct_date = zeros(su_n,rep); 
 for l=1:su_n
+    su = su_list(l);
     parfor k=1:rep
         xl = [0 100];           
         yl = [0 100];           
@@ -29,10 +30,9 @@ for l=1:su_n
         pt(1:2,3) = 1;
 %         h.CData(1:2,:) = ones(2,1)*[1 0 0];
         % percent of smartphone user;
-        su = su_list(l);
+        
         suIdx = rand(num_par,1)<su;
         pt(:,4) = suIdx;
-
 
         % stepX = range(xl) * gain; 
         % stepY = range(yl) * gain; 
